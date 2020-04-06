@@ -1,0 +1,27 @@
+{
+	"pluginmetadataversion" : 2,
+	"name": "Division Deoptimizer",
+	"type": ["core", "ui", "architecture", "binaryview", "helper"],
+	"api": ["python3"],
+	"description": "Deoptimize divisions in binary ninja.",
+	"longdescription": "Deoptimize divisions in binary ninja.",
+	"license": {
+		"name": "TODO",
+		"text": "TODO"
+	},
+	"platforms" : ["Darwin", "Linux", "Windows"],
+	"installinstructions" : {
+		"Darwin" : "Clone into binary ninja plugins directory",
+		"Linux" : "Clone into binary ninja plugins directory",
+		"Windows" : "Clone into binary ninja plugins directory"
+	},
+	"dependencies": {
+		"pip": [],
+		"apt": [],
+		"installers": [],
+		"other": []
+	},
+	"version": "0.0.1",
+	"author": "TODO",
+	"minimumbinaryninjaversion": 1200
+}
