@@ -1,75 +1,124 @@
-from binaryninja import LowLevelILOperation, interaction
+from binaryninja import MediumLevelILOperation, interaction
+from z3 import Real, BitVec, BitVecVal, ZeroExt, LShR, Extract, simplify, SignExt, Solver, sat, ForAll
 
+debug = False
 
-class InvalidPatternError(Exception):
-    pass
+known_ssa_vars = {
 
+}
 
-def validate_pattern(operations: list, instructions: list, starting_index: int):
-    """
-    Check if a pattern is valid.
+# TODO: Better assign dividend
+dividends = []
 
-    :operations: List of the operations in the pattern. LLIL_SET_REG is assumed.
-    :instructions: List of instructions to test
-    :starting_index: Index to test at
-    """
-    retvals = []
-    for i, operation in enumerate(operations):
-        try:
-            if not (
-                instructions[starting_index + i].operation
-                == LowLevelILOperation.LLIL_SET_REG
-                and instructions[starting_index + i].operands[1].operation == operation
-            ):
-                raise InvalidPatternError
-            else:
-                retvals.append(
-                    instructions[starting_index + i].operands[1].operands[1].value.value
-                )
-        except IndexError:
-            raise InvalidPatternError
-
-    return retvals
-
-
-def signed_division_pattern_1(instructions, starting_index):
-    """
-    eax = dividend // dividend
-    rdx = sx.q(eax)
-    rdx = rdx * 0x323c91c5
-    rdx = rdx u>> 0x20
-    edx = edx s>> 0x1b
-    eax = eax s>> 0x1f
-    edx = edx - eax
-    eax = edx // quotient = dividend / 683958287
-    """
-    operations = [
-        LowLevelILOperation.LLIL_MUL,
-        LowLevelILOperation.LLIL_LSR,
-        LowLevelILOperation.LLIL_ASR,
-        LowLevelILOperation.LLIL_ASR,
-    ]
-    try:
-        c, x, z, y = validate_pattern(operations, instructions, starting_index)
-
-        # https://zneak.github.io/fcd/2017/02/19/divisions.html
-        denominator = round((2 ** (x + y + z)) / (c * (2 ** y - 1) + 2 ** z))
-
-        return denominator
-    except InvalidPatternError:
+def get_definition(var, curr_ins, func):
+    definition_instruction = func.mlil.ssa_form.get_ssa_var_definition(var)
+    if definition_instruction:
+        return definition_instruction
+    else:
         return None
 
+def perform_instruction(bv, func, ssa_instruction, depth):
+    # Depth only decreases when resolving another register.
 
-def annotate_divisions(bv, func):
-    instructions = [x for x in func.llil.instructions]
-    found = False
-    for i in range(len(instructions) - 4):
-        divisor = signed_division_pattern_1(instructions, i)
-        if divisor is not None:
-            bv.set_comment_at(instructions[i].address, "divide by " + str(divisor))
-            found = True
+    instruction = ssa_instruction
+    operands = instruction.operands
+    operation = instruction.operation
 
-    if not found:
-        interaction.show_message_box(
-            "Deoptimize Division", "No divisions found in current function"
-        )
+    if debug:
+        print("Performing {}".format(instruction))
+
+    try:
+        if ssa_instruction.value.is_constant:
+            print("it simplified to {}".format(ssa_instruction.value.value))
+            return ssa_instruction.value.value
+    except:
+        pass
+
+    if operation == MediumLevelILOperation.MLIL_VAR_SSA:
+        definition_instruction = get_definition(operands[0], ssa_instruction, func)
+        if definition_instruction and depth > 0:
+            return perform_instruction(bv, func, definition_instruction, depth - 1)
+        else:
+            name = repr(operands[0])
+            size = operands[0].var.type.width
+            r = Real(name)
+            dividends.append(r)
+            return r
+    if operation == MediumLevelILOperation.MLIL_VAR_ALIASED:
+        definition_instruction = get_definition(operands[0], ssa_instruction, func)
+        if definition_instruction and depth > 0:
+            return perform_instruction(bv, func, definition_instruction, depth - 1)
+        else:
+            name = repr(operands[0])
+            size = operands[0].var.type.width
+            r = Real(name)
+            dividends.append(r)
+            return r
+    if operation == MediumLevelILOperation.MLIL_VAR_SSA_FIELD:
+        # TODO: Double check extract values
+        # operand 0: offset
+        # operand 1: reg
+        # MAYBE
+        definition_instruction = get_definition(operands[0], ssa_instruction, func)
+        if definition_instruction and depth > 0:
+            return perform_instruction(bv, func, definition_instruction, depth - 1)
+        else:
+            name = repr(operands[0])
+            size = operands[0].var.type.width
+            r = Real(name)
+            dividends.append(r)
+            return r
+    elif operation == "": #MediumLevelILOperation.LLIL_CONST:
+        # TODO: Figure out size thing; Shoul this be a bitvec?
+        return operands[0]
+    elif operation == MediumLevelILOperation.MLIL_SET_VAR_SSA:
+        known_ssa_vars[instruction.dest] = perform_instruction(bv, func, operands[1], depth)
+    elif operation == MediumLevelILOperation.MLIL_ASR:
+        return perform_instruction(bv, func, operands[0], depth) / 2 ** perform_instruction(bv, func, operands[1], depth)
+    elif operation == MediumLevelILOperation.MLIL_LSR:
+        return perform_instruction(bv, func, operands[0], depth) / 2 ** perform_instruction(bv, func, operands[1], depth)
+    elif operation == MediumLevelILOperation.MLIL_MUL:
+        return perform_instruction(bv, func, operands[0], depth) * perform_instruction(bv, func, operands[1], depth)
+    elif operation == MediumLevelILOperation.MLIL_SUB:
+        return perform_instruction(bv, func, operands[0], depth) - perform_instruction(bv, func, operands[1], depth)
+    elif operation == MediumLevelILOperation.MLIL_ADD:
+        return perform_instruction(bv, func, operands[0], depth) + perform_instruction(bv, func, operands[1], depth)
+    elif operation == MediumLevelILOperation.MLIL_ZX:
+        # TODO: Size Check?
+        return perform_instruction(bv, func, operands[0], depth)
+    elif operation == MediumLevelILOperation.MLIL_SX:
+        # TODO: Size Check?
+        return perform_instruction(bv, func, operands[0], depth)
+    elif operation == MediumLevelILOperation.MLIL_LOAD_SSA:
+        # READ FROM MEMORY
+        # TODO: Size
+        r = Real("SomeMemory")
+        dividends.append(r)
+        return r
+    else:
+        print("Unknown operation {} ({})".format(repr(operation), repr(instruction)))
+        # TODO: Check size w/ arch
+        r = Real("Unknown Operation")
+        dividends.append(r)
+        return r
+
+    return known_ssa_vars[ssa_instruction.dest]
+
+def annotate_divisions_ssa(bv, addr, size):
+    func = bv.get_functions_containing(addr)[0]
+    instruction = func.get_low_level_il_at(addr).mlil.ssa_form
+    result = perform_instruction(bv, func, instruction, 6)
+
+    a = dividends[-1]
+    print(simplify(result))
+    s = Solver()
+    s.add(a == 1)
+    valid = s.check()
+    if valid == sat:
+        m = s.model()
+        divisor = m.eval(1/result).as_decimal(4)
+        if divisor[-1] == '?':
+            divisor = divisor[:-1]
+        print(round(float(divisor)))
+    else:
+        print("unsat")
