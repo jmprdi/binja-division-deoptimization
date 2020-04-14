@@ -1,7 +1,10 @@
 import ctypes
+
+
 def equ_test(x):
     q = x % 1337
     return q
+
 
 def mod_test(equation, val):
     # TODO: 1 and -1 are lower / higher currently,
@@ -12,6 +15,7 @@ def mod_test(equation, val):
         return 1
     elif r1 == val:
         return -1
+
 
 def modulo_binary_search(equation, size):
     """
@@ -38,5 +42,6 @@ def modulo_binary_search(equation, size):
         if move_amount == 0:
             raise Exception("MODULO BINARY SEARCH FAIL")
 
-if __name__ == '__main__':
-    print(modulo_binary_search(equ_test, 2**32))
+
+if __name__ == "__main__":
+    print(modulo_binary_search(equ_test, 2 ** 32))
