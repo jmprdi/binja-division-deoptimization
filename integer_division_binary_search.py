@@ -25,7 +25,7 @@ def integer_division_binary_search(equation, size):
     :size: Maximum size of divisor
     """
 
-    i = size // 2
+    i = size // 2 // 2 # This only handles positive divisors
     move_amount = i
     done = False
     while not done:

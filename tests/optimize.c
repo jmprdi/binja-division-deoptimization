@@ -6,6 +6,7 @@ int main() {
     int b;
     int c;
     int d;
+    unsigned long e;
     unsigned int y;
     long z;
 
@@ -19,6 +20,8 @@ int main() {
     printf("c / 4200 = %d", x / 4200);
     scanf("%d", &d);
     printf("c / 32 = %d", x / 32);
+    scanf("%ld", &e);
+    printf("UNSIGNED LONG b / 435939234853 = %ld", x / 435939234853);
 
     scanf("%u", &y);
     printf("UNSIGNED y / 582 = %d", y / 582);
