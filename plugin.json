@@ -1,27 +1,28 @@
 {
 	"pluginmetadataversion" : 2,
 	"name": "Division Deoptimizer",
-	"type": ["core", "ui", "architecture", "binaryview", "helper"],
+	"type": ["ui", "binaryview", "helper"],
 	"api": ["python3"],
-	"description": "Deoptimize divisions in binary ninja.",
-	"longdescription": "Deoptimize divisions in binary ninja.",
+	"description": "Deoptimize Divisions in Binary Ninja.",
+	"longdescription": "This plugin uses z3 and a binary search to deoptimize divisions in binary ninja. It operates on MLIL, so it should be architecture agnostic. Because z3 is used and instructions are followed, the division deoptimization is also pattern agnostic, so different compiler optimizations should still work.",
 	"license": {
 		"name": "TODO",
 		"text": "TODO"
 	},
 	"platforms" : ["Darwin", "Linux", "Windows"],
 	"installinstructions" : {
-		"Darwin" : "Clone into binary ninja plugins directory",
-		"Linux" : "Clone into binary ninja plugins directory",
-		"Windows" : "Clone into binary ninja plugins directory"
+		"Darwin": "To install this manually, please see the \"Using Plugins\" section of the [Getting Started Guide](https://docs.binary.ninja/getting-started.html#using-plugins).",
+		"Linux": "To install this manually, please see the \"Using Plugins\" section of the [Getting Started Guide](https://docs.binary.ninja/getting-started.html#using-plugins).",
+		"Windows": "To install this manually, please see the \"Using Plugins\" section of the [Getting Started Guide](https://docs.binary.ninja/getting-started.html#using-plugins)."
 	},
 	"dependencies": {
-		"pip": [],
+		"pip": ["z3"],
 		"apt": [],
 		"installers": [],
 		"other": []
 	},
-	"version": "0.0.1",
+	"version": "0.1",
 	"author": "TODO",
-	"minimumbinaryninjaversion": 1200
+	"minimumbinaryninjaversion": 2085,
+    "projectUrl": "https://github.com/jmprdi/binja-division-deoptimization"
 }
