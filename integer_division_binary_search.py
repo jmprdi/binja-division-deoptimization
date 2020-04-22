@@ -8,7 +8,11 @@ def equ_test(x):
 
 def int_div_test(equation, val):
     r1 = equation(val)
+    if r1 == None:
+        return None
     r2 = equation(val - 1)
+    if r2 == None:
+        return None
     if r1 == 1 and r2 == 0:
         return 0
     elif r1 >= 1:
@@ -25,12 +29,18 @@ def integer_division_binary_search(equation, size):
     :size: Maximum size of divisor
     """
 
-    i = size // 2 // 2 # This only handles positive divisors
+    i = size // 2 // 2  # This only handles positive divisors
     move_amount = i
     done = False
     while not done:
         tst = int_div_test(equation, i)
-        if tst == 0:
+        if tst == None:
+            return None
+        elif tst == 0:
+            if i == 1:
+                # Hacky fix to a set of technically-correct, but not intentional divisions
+                # TODO: Move this outside of this file
+                return None
             return i
         elif tst > 0:
             move_amount //= 2
@@ -40,7 +50,7 @@ def integer_division_binary_search(equation, size):
             i = i + move_amount
 
         if move_amount == 0:
-            raise Exception("INTEGER DIVISION BINARY SEARCH FAIL")
+            return None
 
 
 if __name__ == "__main__":

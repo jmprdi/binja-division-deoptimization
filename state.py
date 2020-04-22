@@ -3,6 +3,7 @@ from z3 import BitVecRef, BitVec
 from copy import copy
 from .instructions import MLILInstructionExecutor
 
+
 class State:
     def __init__(self, bv, function):
         self.bv = bv
@@ -25,21 +26,19 @@ class BacktrackingState(State):
         # NOTE: This variables object is shared by all states that are copies of this one.
         self.variables = {}
         self.depth = depth
-        # THIS SHOULDNT BE NEEDED, variables should like only have one thing at the end
+        # This might not be needed. The variables object may be useable... (oldest variable in it...?)
         # NOTE: This potential_inputs object is shared by all states that are copies of this one.
         self.potential_inputs = []
 
     def get_ssa_variable(self, variable: SSAVariable):
-        #existing_value = self.variables.get(variable, None)
-        #if existing_value is not None:
-        #    return existing_value
-
         definition_instruction = self.function.mlil.ssa_form.get_ssa_var_definition(
             variable
         )
         result = None
         if definition_instruction and self.depth > 0:
-            MLILInstructionExecutor(self.bv, definition_instruction).execute(self.next_state())
+            MLILInstructionExecutor(self.bv, definition_instruction).execute(
+                self.next_state()
+            )
             result = self.variables[variable]
         else:
             name = repr(variable)
@@ -48,6 +47,13 @@ class BacktrackingState(State):
             self.potential_inputs.append(result)
 
         self.variables[variable] = result
+        return result
+
+    def get_unconstrained_variable(self, name: str, size_bytes: int):
+        size = size_bytes * 8
+        result = BitVec(name, size)
+        self.potential_inputs.append(result)
+
         return result
 
     def set_ssa_variable(self, variable: SSAVariable, value: BitVecRef):
@@ -61,10 +67,8 @@ class BacktrackingState(State):
         self.potential_inputs.append(result)
         return result
 
-
     def next_state(self):
         state = BacktrackingState(self.bv, self.function, self.depth - 1)
         state.variables = self.variables
         state.potential_inputs = self.potential_inputs
         return state
-
