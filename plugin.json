@@ -21,7 +21,7 @@
 		"installers": [],
 		"other": []
 	},
-	"version": "0.1",
+	"version": "0.1.1",
 	"author": "Nathan Peercy",
 	"minimumbinaryninjaversion": 2085,
     "projectUrl": "https://github.com/jmprdi/binja-division-deoptimization"
