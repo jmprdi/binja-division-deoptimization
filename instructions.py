@@ -100,6 +100,15 @@ class MLILInstructionExecutor:
 
         return [operand_1 >> operand_2]
 
+    def evaluate_MLIL_LSL(self, state):
+        # TODO: Is an arethmetic shift fine here, or should a logical shift be used?
+
+        operand_1, operand_2 = self.instructions_to_operands(
+            self.instruction.operands, state, self.instruction.size
+        )
+
+        return [operand_1 << operand_2]
+
     def evaluate_MLIL_LSR(self, state):
         operand_1, operand_2 = self.instructions_to_operands(
             self.instruction.operands, state, self.instruction.size
