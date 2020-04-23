@@ -1,11 +1,15 @@
-from binaryninja import SSAVariable
+from binaryninja import SSAVariable, BinaryView, Function
 from z3 import BitVecRef, BitVec
 from copy import copy
 from .instructions import MLILInstructionExecutor
 
 
 class State:
-    def __init__(self, bv, function):
+    """
+    State of the current execution
+    """
+
+    def __init__(self, bv: BinaryView, function: Function):
         self.bv = bv
         self.function = function
 
@@ -20,7 +24,11 @@ class State:
 
 
 class BacktrackingState(State):
-    def __init__(self, bv, function, depth):
+    """
+    Backtracking state that can look up requested variables via the SSA variable definitions.
+    """
+
+    def __init__(self, bv: BinaryView, function: Function, depth: int):
         super().__init__(bv, function)
         # TODO: Make variables an object that errors upon assigning the same value twice?
         # NOTE: This variables object is shared by all states that are copies of this one.
@@ -31,6 +39,11 @@ class BacktrackingState(State):
         self.potential_inputs = []
 
     def get_ssa_variable(self, variable: SSAVariable):
+        """
+        Look up SSA variable by executing the instruction in which it was defined
+
+        :variable: SSAVariable to look up.
+        """
         definition_instruction = self.function.mlil.ssa_form.get_ssa_var_definition(
             variable
         )
@@ -50,6 +63,12 @@ class BacktrackingState(State):
         return result
 
     def get_unconstrained_variable(self, name: str, size_bytes: int):
+        """
+        Return an unconstrained BitVec
+
+        :name: Name of the bitvector
+        :size_bytes: Size of the bitvector in bytes
+        """
         size = size_bytes * 8
         result = BitVec(name, size)
         self.potential_inputs.append(result)
@@ -57,9 +76,21 @@ class BacktrackingState(State):
         return result
 
     def set_ssa_variable(self, variable: SSAVariable, value: BitVecRef):
+        """
+        Set a SSA variable to a value
+
+        :variable: Variable to set
+        :value: Value to set the variable to
+        """
         self.variables[variable] = value
 
     def get_ssa_memory_at(self, location: BitVecRef, ssa_index: BitVecRef):
+        """
+        Read ssa memory. Currently only returns a bitvec.
+
+        :location: Location to read memory from
+        :ssa_index: SSA memory index
+        """
         # TODO: This can be much more better.
         name = repr(location)
         size = self.bv.arch.address_size * 8
@@ -68,6 +99,10 @@ class BacktrackingState(State):
         return result
 
     def next_state(self):
+        """
+        Get the next state for a newly executed instruction
+        """
+
         state = BacktrackingState(self.bv, self.function, self.depth - 1)
         state.variables = self.variables
         state.potential_inputs = self.potential_inputs

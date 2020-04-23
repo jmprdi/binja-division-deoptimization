@@ -1,14 +1,29 @@
-from binaryninja import log
+from binaryninja import log, BinaryView, MediumLevelILInstruction
 
 from z3 import LShR, ZeroExt, SignExt, BitVec, BitVecVal, Extract
 
+from typing import List
+
 
 class MLILInstructionExecutor:
-    def __init__(self, bv, instruction):
+    """
+    Class to execute MLIL instructions.
+    """
+
+    def __init__(self, bv: BinaryView, instruction: MediumLevelILInstruction):
         self.bv = bv
         self.instruction = instruction
 
-    def instructions_to_operands(self, instructions, state, size):
+    def instructions_to_operands(
+        self, instructions: List[MediumLevelILInstruction], state, size: int
+    ):
+        """
+        Get operands from instruction list, increasing their size if needed.
+
+        :instructions: List of instructions to convert to operands
+        :state: Current active state
+        :size: Minimum size in bytes of the operands
+        """
         operands = []
         largest_size = size * 8
         for instruction in instructions:
@@ -26,6 +41,12 @@ class MLILInstructionExecutor:
         return operands
 
     def execute(self, state):
+        """
+        Execute instruction that this class was initialized with.
+
+        :state: Current active state
+        """
+
         operation = self.instruction.operation.name
         log.log_debug(
             "Evaluating {}: {} @ {}".format(

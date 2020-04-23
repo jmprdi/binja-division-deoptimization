@@ -1,13 +1,14 @@
 import ctypes
 
 
-def equ_test(x):
-    q = x % 1337
-    return q
-
-
 def mod_test(equation, val):
-    # TODO: 1 and -1 are lower / higher currently,
+    """
+    Comparison for the modulo binary search.
+
+    :equation: Equation to test
+    :val: Input to the division
+    """
+
     r1 = equation(val)
     if r1 == None:
         return None
@@ -53,6 +54,11 @@ def modulo_binary_search(equation, size):
 
         if move_amount == 0:
             return None
+
+
+def equ_test(x):
+    q = x % 1337
+    return q
 
 
 if __name__ == "__main__":

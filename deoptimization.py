@@ -4,10 +4,26 @@ from .modulo_binary_search import modulo_binary_search
 from .state import BacktrackingState
 from .instructions import MLILInstructionExecutor
 from z3 import Solver, simplify, sat
-from binaryninja import MediumLevelILOperation, BackgroundTaskThread, log
+from binaryninja import (
+    MediumLevelILOperation,
+    BackgroundTaskThread,
+    log,
+    BinaryView,
+    MediumLevelILInstruction,
+    Function,
+)
 
 
-def annotate_operations_ending_at_mlil_instruction(bv, instruction, function):
+def annotate_operations_ending_at_mlil_instruction(
+    bv: BinaryView, instruction: MediumLevelILInstruction, function: Function
+):
+    """
+    Annotate divisions and modulos that end at the specified MLIL instruction
+
+    :bv: Current binaryview
+    :instruction: Instruction to examine
+    :function: Current function
+    """
     ssa_instruction = instruction.ssa_form
 
     # TODO: There is probably an easy way to know more instructions that can be skipped.
@@ -71,7 +87,13 @@ def annotate_operations_ending_at_mlil_instruction(bv, instruction, function):
 
 
 class AnnotateAtMLILInstruction(BackgroundTaskThread):
-    def __init__(self, bv, instruction, function):
+    """
+    Thread to annotate divisions and modulos that end at the specified MLIL instruction
+    """
+
+    def __init__(
+        self, bv: BinaryView, instruction: MediumLevelILInstruction, function: Function
+    ):
         BackgroundTaskThread.__init__(
             self, "Deoptmizing Operations - Instruction", True
         )
@@ -86,7 +108,11 @@ class AnnotateAtMLILInstruction(BackgroundTaskThread):
 
 
 class AnnotateAtFunction(BackgroundTaskThread):
-    def __init__(self, bv, function):
+    """
+    Thread to annotate divisions and modulos on every line in a function.
+    """
+
+    def __init__(self, bv: BinaryView, function: Function):
         BackgroundTaskThread.__init__(self, "Deoptimizing Operations - Function", True)
         self.bv = bv
         self.function = function
@@ -99,7 +125,13 @@ class AnnotateAtFunction(BackgroundTaskThread):
                 )
 
 
-def annotate_operations_ending_at_address(bv, address):
+def annotate_operations_ending_at_address(bv: BinaryView, address: int):
+    """
+    Plugin command to annotate divisions and modulos that end at an address.
+
+    :bv: Current binaryview
+    :address: Address to check
+    """
     function = bv.get_functions_containing(address)[0]
     instruction = function.get_low_level_il_at(address).mlil
 
@@ -107,6 +139,12 @@ def annotate_operations_ending_at_address(bv, address):
     t.start()
 
 
-def annotate_operations_in_function(bv, function):
+def annotate_operations_in_function(bv: BinaryView, function: Function):
+    """
+    Plugin command to annotate divisions and modulos on every line in a function.
+
+    :bv: Current binaryview
+    :function: Function to check
+    """
     t = AnnotateAtFunction(bv, function)
     t.start()

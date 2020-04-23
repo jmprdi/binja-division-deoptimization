@@ -1,12 +1,14 @@
 import ctypes
 
 
-def equ_test(x):
-    q = x // 53
-    return q
-
-
 def int_div_test(equation, val):
+    """
+    Comparison for the integer division binary search.
+
+    :equation: Equation to test
+    :val: Input to the division
+    """
+
     r1 = equation(val)
     if r1 == None:
         return None
@@ -50,6 +52,11 @@ def integer_division_binary_search(equation, size):
 
         if move_amount == 0:
             return None
+
+
+def equ_test(x):
+    q = x // 53
+    return q
 
 
 if __name__ == "__main__":
