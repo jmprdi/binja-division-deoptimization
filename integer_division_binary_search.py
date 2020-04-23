@@ -38,8 +38,7 @@ def integer_division_binary_search(equation, size):
             return None
         elif tst == 0:
             if i == 1:
-                # Hacky fix to a set of technically-correct, but not intentional divisions
-                # TODO: Move this outside of this file
+                # Remove a set of technically-correct, but not intentional divisions
                 return None
             return i
         elif tst > 0:

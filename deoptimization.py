@@ -1,12 +1,13 @@
 from .integer_division_binary_search import integer_division_binary_search
 from .modulo_binary_search import modulo_binary_search
+from .modulo_binary_search import modulo_binary_search
 from .state import BacktrackingState
 from .instructions import MLILInstructionExecutor
 from z3 import Solver, simplify, sat
 from binaryninja import MediumLevelILOperation, BackgroundTaskThread, log
 
 
-def annotate_division_ending_at_mlil_instruction(bv, instruction, function):
+def annotate_operations_ending_at_mlil_instruction(bv, instruction, function):
     ssa_instruction = instruction.ssa_form
 
     # TODO: There is probably an easy way to know more instructions that can be skipped.
@@ -15,7 +16,8 @@ def annotate_division_ending_at_mlil_instruction(bv, instruction, function):
         log.log_debug("Deoptimizer: Skipping Instruction")
         return None
 
-    backtracking_state = BacktrackingState(bv, function, depth=7)
+    # 15 found experimentially. There may be longer modulo optimiztions.
+    backtracking_state = BacktrackingState(bv, function, depth=15)
     start = MLILInstructionExecutor(bv, ssa_instruction)
 
     try:
@@ -43,7 +45,7 @@ def annotate_division_ending_at_mlil_instruction(bv, instruction, function):
     input_bv = backtracking_state.potential_inputs[-1]
     output_bv = backtracking_state.variables[ssa_instruction.dest]
 
-    def do_divide(dividend):
+    def do_operation(dividend):
         s = Solver()
         s.set("timeout", 10)
         s.add(input_bv == dividend)
@@ -57,39 +59,47 @@ def annotate_division_ending_at_mlil_instruction(bv, instruction, function):
         except AttributeError:
             return None
 
-    divisor = integer_division_binary_search(do_divide, 2 ** input_bv.size())
+    modulo = modulo_binary_search(do_operation, 2 ** input_bv.size())
+    if modulo is not None:
+        bv.set_comment_at(ssa_instruction.address, "modulo by {}".format(modulo))
+        return
+
+    divisor = integer_division_binary_search(do_operation, 2 ** input_bv.size())
     if divisor is not None:
         bv.set_comment_at(ssa_instruction.address, "divide by {}".format(divisor))
+        return
 
 
 class AnnotateAtMLILInstruction(BackgroundTaskThread):
     def __init__(self, bv, instruction, function):
-        BackgroundTaskThread.__init__(self, "Deoptmizing Division - Instruction", True)
+        BackgroundTaskThread.__init__(
+            self, "Deoptmizing Operations - Instruction", True
+        )
         self.bv = bv
         self.instruction = instruction
         self.function = function
 
     def run(self):
-        annotate_division_ending_at_mlil_instruction(
+        annotate_operations_ending_at_mlil_instruction(
             self.bv, self.instruction, self.function
         )
 
 
 class AnnotateAtFunction(BackgroundTaskThread):
     def __init__(self, bv, function):
-        BackgroundTaskThread.__init__(self, "Deoptimizing Division - Function", True)
+        BackgroundTaskThread.__init__(self, "Deoptimizing Operations - Function", True)
         self.bv = bv
         self.function = function
 
     def run(self):
         for bb in self.function.mlil_basic_blocks:
             for instruction in bb:
-                annotate_division_ending_at_mlil_instruction(
+                annotate_operations_ending_at_mlil_instruction(
                     self.bv, instruction, self.function
                 )
 
 
-def annotate_division_ending_at_address(bv, address):
+def annotate_operations_ending_at_address(bv, address):
     function = bv.get_functions_containing(address)[0]
     instruction = function.get_low_level_il_at(address).mlil
 
@@ -97,6 +107,6 @@ def annotate_division_ending_at_address(bv, address):
     t.start()
 
 
-def annotate_divisions_in_function(bv, function):
+def annotate_operations_in_function(bv, function):
     t = AnnotateAtFunction(bv, function)
     t.start()
