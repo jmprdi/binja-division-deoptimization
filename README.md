@@ -24,6 +24,8 @@ To analyze every line in the current function, run "Deoptimize Operation - Funct
 
 Clone or symlink this repository into your plugin folder. (https://docs.binary.ninja/guide/plugins.html#using-plugins)
 
+In addition, ensure that `z3-solver` is installed in your python environment.
+
 # Known Failures
 
 These failures are caused by the incomplete impletation of the MLIL.
