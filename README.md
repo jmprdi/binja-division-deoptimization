@@ -42,7 +42,7 @@ These failures are caused by the incomplete impletation of the MLIL.
     scanf("%d", &b);
     printf("b % 435939234853 = %d", x % 435939234853); // Still doesn't work
     scanf("%ld", &e);
-    printf("UNSIGNED LONG b % 435939234853 = %ld", x % 435939234853); // Shockingly, this still doesn't work
+    printf("UNSIGNED LONG b % 435939234853 = %ld", x % 435939234853); // Still doesn't work
 ```
 
  - 64 bit, divide or modulo by 32, and possibly other powers of 2. There's an issue with variable sizes so that a division of a 4-byte int results in 9223372032559808544, which is technically correct... `c_int(9223372032559808544).value == 32`. Modulo doesn't have any result.
