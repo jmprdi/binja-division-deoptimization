@@ -4,7 +4,7 @@ This plugin uses z3 and a binary search to deoptimize divisions and modulos in b
 
 It works by following the operands of a SSA MLIL instruction. After following the operands, the z3 value representing the final MLIL variable will be a function of an unconstrained input variable. We can use a binary search with different arguments to that function to determine what the actual divisor is.
 
-Notes about speed: This is slow. It takes about a second per MLIL instruction tested, so large functions will not be analyzed quickly. There are a couple easy speed improvements that can be made, and some more complex ones. Testing every other MLIL line should still catch most if not all divisions/modulos, only running the division pass or modulo pass, not analyzing instructions that are too far away from relevant arethmetic are some examples of potential speed improvements, and reusing analysis effort on nearby lines are some potential future speed improvements.
+Notes about speed: This is slow. It takes about a second per MLIL instruction tested, so large functions will not be analyzed quickly. There are a couple easy speed improvements that can be made, and some more complex ones. Testing every other MLIL line should still catch most if not all divisions/modulos, only running the division pass or modulo pass, not analyzing instructions that are too far away from relevant arethmetic, and reusing analysis effort on nearby lines are some potential future speed improvements.
 
 # Usage
 
